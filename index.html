@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <a href="/foo">foo</a>
+      <a href="/bar">bar</a>
+    </div>
+    <div class="container" id="root"></div>
+    <script>
+      /** 发布-订阅
+        发布：
+        前进、后退
+        点击a标签
+        订阅：
+        触发页面重新渲染
+        */
+      function toggle() {
+        const container = document.getElementById("root");
+        switch (location.pathname) {
+          case "/":
+            container.innerHTML = "<p>nothing</p>";
+            break;
+          case "/foo":
+            container.innerHTML = "<p>here is foo</p>";
+            break;
+          case "/bar":
+            container.innerHTML = "<p>here is bar</p>";
+            break;
+          default:
+            container.innerHTML = "<p>whats that</p>";
+            break;
+        }
+      }
+      function init() {
+        // 1. 拦截 history.pushState、history.replaceState 方法，注入 DOM 修改代码
+        const originPush = history.pushState;
+        history.pushState = function (...args) {
+          const result = originPush.call(this, ...args);
+          toggle();
+          return result;
+        };
+        const originReplace = history.replaceState;
+        history.replaceState = function (...args) {
+          const result = originReplace.call(this, ...args);
+          toggle();
+          return result;
+        };
+
+        // 2. 为 a 标签加事件处理
+        const aElements = document.querySelectorAll("a[href]");
+        aElements.forEach((a) => {
+          a.addEventListener("click", function (e) {
+            e.preventDefault();
+            history.pushState(null, "", a.href);
+          });
+        });
+
+        // 3. 处理 popstate 事件
+        window.addEventListener("popstate", toggle);
+
+        // 4. 自行触发一波
+        toggle();
+      }
+
+      window.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
